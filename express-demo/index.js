@@ -51,7 +51,7 @@ app.post('/api/courses', (req, res) => {
     res.send(course);
 })
 
-//PUT
+//PUT Request
 // Look up the course
 // If not existing, return 404
 app.put('/api/courses/:id', (req, res) => {
@@ -80,6 +80,22 @@ function validateCourse(course) {
     
     return schema.validate(course);
 }
+
+// Delete Request
+
+// if id exists
+app.delete('/api/courses/:id', (req,res) => {
+    const course = courses.find(c => c.id === parseInt(req.params.id));
+    // If id does not exists
+    if (!course) {
+        res.status(404).send('Course does not exists');
+        return;
+    }
+    // courses.pop(req.params.id);
+    const index = courses.indexOf(course);
+    courses.splice(index,1);
+    res.send(`Course ${req.params.id} successfully deleted`);
+})
 
 //PORT 
 // In real world application, the port is going to be set dynamically & process is our global variable
