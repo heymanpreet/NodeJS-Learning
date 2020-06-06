@@ -38,11 +38,8 @@ app.post('/api/courses', (req, res) => {
     //     return;
     // }
     //Validation using Joi
-    if (result.error) {
-        res.status(400).send(result.error.details[0].message);
-        return;
-    }   
-
+    if (result.error) return res.status(400).send(result.error.details[0].message);
+    
     const course = {
         id: courses.length + 1,
         name: req.body.name
@@ -56,16 +53,11 @@ app.post('/api/courses', (req, res) => {
 // If not existing, return 404
 app.put('/api/courses/:id', (req, res) => {
     const course = courses.find(c => c.id === parseInt(req.params.id));
-    if (!course) {
-        res.status(404).send('Course does not exists');
-    }
+    if (!course) return res.status(404).send('Course does not exists');
     // Validate
     // If Invalid, return 400 bad request
     const { error } = validateCourse(req.body);   
-    if (error) {
-        res.status(400).send(error.details[0].message);
-        return;
-    }
+    if (error) return res.status(400).send(error.details[0].message);
     // Update course
     course.name = req.body.name;
     // Return the updated course
@@ -77,24 +69,18 @@ function validateCourse(course) {
     const schema = Joi.object({
         name: Joi.string().min(3).required()
     })
-    
     return schema.validate(course);
 }
 
 // Delete Request
-
-// if id exists
 app.delete('/api/courses/:id', (req,res) => {
     const course = courses.find(c => c.id === parseInt(req.params.id));
     // If id does not exists
-    if (!course) {
-        res.status(404).send('Course does not exists');
-        return;
-    }
-    // courses.pop(req.params.id);
+    if (!course) return res.status(404).send('Course does not exists');
+    // if id exists
     const index = courses.indexOf(course);
     courses.splice(index,1);
-    res.send(`Course ${req.params.id} successfully deleted`);
+    return res.send(`Course ${req.params.id} successfully deleted`);
 })
 
 //PORT 
