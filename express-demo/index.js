@@ -1,87 +1,43 @@
 const express = require('express');
 const app = express();
+
+const config = require('config');
 const Joi = require('@hapi/joi');
-const courses = [{ id: 1, name: 'course 1' }, { id: 2, name: 'course 1' }, { id: 3, name: 'course 1' }]
+const helmet = require('helmet'); // Help secure Express apps with various HTTP headers
+const morgan = require('morgan'); // HTTP request logger middleware for node.js
+const logging = require('./middleware/logging');
+const startupDebugger = require('debug')('app:startup');
+const dbDebugger = require('debug')('app:db');
 
-app.use(express.json());
+const courses = require('./routes/courses');
+const home = require('./routes/home');
 
-app.get('/', (req, res) => {
-    res.send('wahooooo ooho oo');
-});
+app.use(express.json()); // request.body
+app.use(logging); // custom middleware
+app.use(express.urlencoded({extended:true}));
+app.use(express.static('public'));
+app.use(helmet());
 
-app.get('/api/courses', (req, res) => {
-    res.send(courses);
-})
+//Navigating to various Routers
+app.use('/api/courses',courses);// we tell index.js that for any route with /api/courses, use courses route module.
+app.use('/',home);
 
-//:year is a route parameter
-// ?sortBy=name these are query paramaters. They are optional things we pass from frontend
-app.get('/api/courses/:id', (req, res) => {
-    const course = courses.find(c => c.id === parseInt(req.params.id))
-    if (!course) { res.status(404).send('This course does not exist'); }
-    res.send(course);
+app.set('view engine','pug'); // Node will load the pug
+app.set('views','./views'); // optional setting means to put all the template inside views folder
 
-    //res.send(req.params);// request params
-    //res.send(req.query);// query params
-})
-
-//POST
-app.post('/api/courses', (req, res) => {
-
-    const schema = Joi.object({
-        name: Joi.string().min(3).required()
-    })
-    const result = schema.validate({ name: req.body.name });
-    console.log(result);
-    // Normal Validation
-    // if(!req.body.name || req.body.name.length != 3) {
-    //     res.status(400).send('Name is required & should be min. 3 characters');
-    //     return;
-    // }
-    //Validation using Joi
-    if (result.error) return res.status(400).send(result.error.details[0].message);
-    
-    const course = {
-        id: courses.length + 1,
-        name: req.body.name
-    };
-    courses.push(course);
-    res.send(course);
-})
-
-//PUT Request
-// Look up the course
-// If not existing, return 404
-app.put('/api/courses/:id', (req, res) => {
-    const course = courses.find(c => c.id === parseInt(req.params.id));
-    if (!course) return res.status(404).send('Course does not exists');
-    // Validate
-    // If Invalid, return 400 bad request
-    const { error } = validateCourse(req.body);   
-    if (error) return res.status(400).send(error.details[0].message);
-    // Update course
-    course.name = req.body.name;
-    // Return the updated course
-    res.send(course)
-})
-
-//Validation Function
-function validateCourse(course) {
-    const schema = Joi.object({
-        name: Joi.string().min(3).required()
-    })
-    return schema.validate(course);
+// Configuration
+// console.log(`Application Name: ${config.get('name')}`);
+// console.log(`Mail Server: ${config.get('mail.host')}`);
+// console.log(`Mail Password: ${config.get('mail.password')}`);//search all files for password
+// console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+// env is by default set to DEV, we can change it using set NODE_ENV=development(no space between = & env)
+if(app.get('env') === 'development') {
+    app.use(morgan('tiny'));   
+    // console.log("Morgan Enabled...");
+    startupDebugger("Morgan Enabled");
 }
-
-// Delete Request
-app.delete('/api/courses/:id', (req,res) => {
-    const course = courses.find(c => c.id === parseInt(req.params.id));
-    // If id does not exists
-    if (!course) return res.status(404).send('Course does not exists');
-    // if id exists
-    const index = courses.indexOf(course);
-    courses.splice(index,1);
-    return res.send(`Course ${req.params.id} successfully deleted`);
-})
+// Db Work
+dbDebugger('Connected to Database');
 
 //PORT 
 // In real world application, the port is going to be set dynamically & process is our global variable
