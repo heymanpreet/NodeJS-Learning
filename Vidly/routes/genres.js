@@ -1,13 +1,8 @@
 const express = require('express');
 const router = express.Router();
-
+const Joi = require('@hapi/joi');
 
 genres = [{id:1,genre:'Action'}, {id:2,genre:'Adventure'}, {id:3,genre:'Comedy'}, {id:4,genre:'Horror'}];
-
-// GET Genres
-router.get('/', (req,res) => {
-    res.send("Welcome to Vidly, Your Personal Movie Platform.");
-})
 
 // GET Genres
 router.get('/', (req,res) => {
@@ -60,7 +55,7 @@ function validateGenre(genre) {
     const schema = Joi.object({
         genre: Joi.string().required()
     })
-    return schema.validate(genre);
+    return schema.validate(genre.genre);
 }
 
 module.exports = router;
